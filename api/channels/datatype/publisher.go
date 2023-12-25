@@ -1,11 +1,11 @@
-package datatype
+package main
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-stomp/stomp"
 	"log"
-	"messaging-concepts/cmd/api/models"
+	"messaging-concepts/models"
 	"net"
 )
 
@@ -25,7 +25,7 @@ const (
 	Model         = "model"
 )
 
-func GetConnection() (*stomp.Conn, error) {
+func getConnection() (*stomp.Conn, error) {
 	netConn, err := net.Dial(Tcp, ServerAddr)
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func GetConnection() (*stomp.Conn, error) {
 	return stompConn, err
 }
 
-func GetPublishers(conn *stomp.Conn) (plane *stomp.Subscription, hotel *stomp.Subscription, car *stomp.Subscription, e error) {
+func getPublishers(conn *stomp.Conn) (plane *stomp.Subscription, hotel *stomp.Subscription, car *stomp.Subscription, e error) {
 	planeSubscription, err := subscribeToBookingType(conn, Plane)
 	if err != nil {
 		return nil, nil, nil, err
@@ -58,7 +58,7 @@ func subscribeToBookingType(conn *stomp.Conn, bookingType string) (*stomp.Subscr
 	return conn.Subscribe(TopicName, stomp.AckAuto, stomp.SubscribeOpt.Header(Selector, selector))
 }
 
-func PublishBookingMessage[T any](conn *stomp.Conn, bookingModel string, content T) error {
+func publishBookingMessage[T any](conn *stomp.Conn, bookingModel string, content T) error {
 	bookingMsg := models.BookingMessage[T]{
 		Model:   bookingModel,
 		Content: content,

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"github.com/go-stomp/stomp"
 	"log"
-	"messaging-concepts/cmd/api/channels/datatype"
-	"messaging-concepts/cmd/api/models"
+	"messaging-concepts/models"
 	"time"
 )
 
@@ -17,13 +16,13 @@ func main() {
 }
 
 func run() error {
-	conn, err := datatype.GetConnection()
+	conn, err := getConnection()
 	if err != nil {
 		return err
 	}
 	defer conn.Disconnect()
 
-	planeSubscription, hotelSubscription, carSubscription, err := datatype.GetPublishers(conn)
+	planeSubscription, hotelSubscription, carSubscription, err := getPublishers(conn)
 	if err != nil {
 		return err
 	}
@@ -101,7 +100,7 @@ func sendMockedMessages(conn *stomp.Conn) error {
 		Departure:    time.Now(),
 		Arrival:      time.Now().Add(2 * time.Hour),
 	}
-	if err := datatype.PublishBookingMessage(conn, datatype.Plane, planeBooking); err != nil {
+	if err := publishBookingMessage(conn, Plane, planeBooking); err != nil {
 		return err
 	}
 
@@ -110,7 +109,7 @@ func sendMockedMessages(conn *stomp.Conn) error {
 		CheckIn:   time.Now().Add(24 * time.Hour),
 		CheckOut:  time.Now().Add(48 * time.Hour),
 	}
-	if err := datatype.PublishBookingMessage(conn, datatype.Hotel, hotelBooking); err != nil {
+	if err := publishBookingMessage(conn, Hotel, hotelBooking); err != nil {
 		return err
 	}
 
@@ -118,7 +117,7 @@ func sendMockedMessages(conn *stomp.Conn) error {
 		VehicleModel:   "Tesla Model S",
 		PickupLocation: "Downtown Garage",
 	}
-	if err := datatype.PublishBookingMessage(conn, datatype.Car, carBooking); err != nil {
+	if err := publishBookingMessage(conn, Car, carBooking); err != nil {
 		return err
 	}
 
