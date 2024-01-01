@@ -16,15 +16,38 @@ type PlaneBooking struct {
 	Arrival      time.Time `json:"arrival"`
 }
 
+func GenericPlaneBookingInstance() PlaneBooking {
+	return PlaneBooking{
+		FlightNumber: "AB123",
+		Departure:    time.Now(),
+		Arrival:      time.Now().Add(2 * time.Hour),
+	}
+}
+
 type CarBooking struct {
 	VehicleModel   string `json:"vehicleModel"`
 	PickupLocation string `json:"pickupLocation"`
+}
+
+func GenericCarBookingInstance() CarBooking {
+	return CarBooking{
+		VehicleModel:   "Tesla Model S",
+		PickupLocation: "Downtown Garage",
+	}
 }
 
 type HotelBooking struct {
 	HotelName string    `json:"hotelName"`
 	CheckIn   time.Time `json:"checkIn"`
 	CheckOut  time.Time `json:"checkOut"`
+}
+
+func GenericHotelBookingInstance() HotelBooking {
+	return HotelBooking{
+		HotelName: "Grand Hotel",
+		CheckIn:   time.Now().Add(24 * time.Hour),
+		CheckOut:  time.Now().Add(48 * time.Hour),
+	}
 }
 
 func (pb PlaneBooking) String() string {

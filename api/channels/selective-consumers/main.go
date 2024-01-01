@@ -6,7 +6,20 @@ import (
 	"github.com/go-stomp/stomp"
 	"log"
 	"messaging-concepts/models"
-	"time"
+	"messaging-concepts/utils"
+)
+
+const (
+	TopicName = "booking-topic"
+)
+
+const (
+	Hotel         = "hotel"
+	Car           = "car"
+	Plane         = "plane"
+	Selector      = "selector"
+	ModelSelector = "model='%s'"
+	Model         = "model"
 )
 
 func main() {
@@ -16,13 +29,13 @@ func main() {
 }
 
 func run() error {
-	conn, err := getConnection()
+	conn, err := utils.GetConnection(utils.Base)
 	if err != nil {
 		return err
 	}
 	defer conn.Disconnect()
 
-	planeSubscription, hotelSubscription, carSubscription, err := getPublishers(conn)
+	planeSubscription, hotelSubscription, carSubscription, err := getSubscriptions(conn)
 	if err != nil {
 		return err
 	}
@@ -95,31 +108,49 @@ func consumeCarBooking(subscription *stomp.Subscription) error {
 }
 
 func sendMockedMessages(conn *stomp.Conn) error {
-	planeBooking := models.PlaneBooking{
-		FlightNumber: "AB123",
-		Departure:    time.Now(),
-		Arrival:      time.Now().Add(2 * time.Hour),
-	}
-	if err := publishBookingMessage(conn, Plane, planeBooking); err != nil {
+	if err := publishBookingMessage(conn, Plane, models.GenericPlaneBookingInstance()); err != nil {
 		return err
 	}
 
-	hotelBooking := models.HotelBooking{
-		HotelName: "Grand Hotel",
-		CheckIn:   time.Now().Add(24 * time.Hour),
-		CheckOut:  time.Now().Add(48 * time.Hour),
-	}
-	if err := publishBookingMessage(conn, Hotel, hotelBooking); err != nil {
+	if err := publishBookingMessage(conn, Hotel, models.GenericHotelBookingInstance()); err != nil {
 		return err
 	}
 
-	carBooking := models.CarBooking{
-		VehicleModel:   "Tesla Model S",
-		PickupLocation: "Downtown Garage",
-	}
-	if err := publishBookingMessage(conn, Car, carBooking); err != nil {
+	if err := publishBookingMessage(conn, Car, models.GenericCarBookingInstance()); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func getSubscriptions(conn *stomp.Conn) (plane *stomp.Subscription, hotel *stomp.Subscription, car *stomp.Subscription, e error) {
+	planeSubscription, err := subscribeToBookingType(conn, Plane)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	hotelSubscription, err := subscribeToBookingType(conn, Hotel)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	carSubscription, err := subscribeToBookingType(conn, Car)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return planeSubscription, hotelSubscription, carSubscription, nil
+}
+
+func subscribeToBookingType(conn *stomp.Conn, bookingType string) (*stomp.Subscription, error) {
+	selector := fmt.Sprintf(ModelSelector, bookingType) // Selector based on header
+	return conn.Subscribe(TopicName, stomp.AckAuto, stomp.SubscribeOpt.Header(Selector, selector))
+}
+
+func publishBookingMessage[T any](conn *stomp.Conn, bookingModel string, content T) error {
+	bookingMsg := models.BookingMessage[T]{
+		Model:   bookingModel,
+		Content: content,
+	}
+	return utils.PublishMessage(conn, TopicName, bookingMsg, map[string]string{Model: bookingModel})
 }

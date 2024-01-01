@@ -1,8 +1,42 @@
 version: '3'
+
+volumes:
+  mysql-data:
+
 services:
-  activemq:
+  base-activemq:
     image: rmohr/activemq:latest
     ports:
-      - "61616:61616"
       - "8161:8161"
       - "61613:61613"
+
+  persistent-activemq-kaha-db:
+    image: rmohr/activemq:latest
+    ports:
+      - "8162:8161"
+      - "61614:61613"
+    volumes:
+      - ./channels/persistence/persistent-activemq-kaha-db.xml:/opt/activemq/conf/activemq.xml
+
+  persistent-activemq-mysql:
+    image: rmohr/activemq:latest
+    ports:
+      - "8163:8161"
+      - "61615:61613"
+    volumes:
+      - ./channels/persistence/persistent-activemq-mysql.xml:/opt/activemq/conf/activemq.xml
+      - ./channels/persistence/mysql-connector-j-8.2.0.jar:/opt/activemq/lib/mysql-connector-java.jar
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_DATABASE: activemq_db
+      MYSQL_USER: activemq
+      MYSQL_PASSWORD: activemq
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
